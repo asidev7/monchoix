@@ -1,0 +1,30 @@
+# --- Core ---
+Django>=5.1,<6.1
+psycopg[binary]>=3.2
+python-dotenv>=1.0
+dj-database-url>=2.2
+Pillow>=10.4
+
+# --- RAG / Vectors ---
+pgvector>=0.3.6
+
+# --- Async ---
+celery>=5.4
+redis>=5.0
+
+# --- Auth ---
+django-allauth>=64.0
+
+# --- Admin theme ---
+django-jazzmin>=3.0
+
+# --- HTTP / APIs (DeepSeek, Web Search, FedaPay) ---
+requests>=2.32
+
+# --- PDF export + text extraction (knowledge base) ---
+weasyprint>=62.0
+pypdf>=4.0
+
+# --- Prod server ---
+gunicorn>=22.0
+whitenoise>=6.7

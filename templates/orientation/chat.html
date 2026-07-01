@@ -1,0 +1,275 @@
+{% extends "dashboard_base.html" %}
+{% block title %}Orientation — MonChoix{% endblock %}
+{% block page_title %}Mon orientation{% endblock %}
+{% block content %}
+{{ questions_json|json_script:"questions-data" }}
+{{ answers_json|json_script:"answers-data" }}
+<script id="series-data" type="application/json">[
+  {% for s in series %}{"code": "{{ s.code|escapejs }}", "label": "{{ s.label|escapejs }}"}{% if not forloop.last %},{% endif %}{% endfor %}
+]</script>
+
+<div class="px-4 sm:px-8 py-8" x-data="chatbot()" x-cloak>
+
+  <!-- Progress -->
+  <div class="mb-6" x-show="phase === 'chat'">
+    <div class="flex justify-between text-xs text-gray-500 mb-1">
+      <span>Question <span x-text="step + 1"></span> / <span x-text="questions.length"></span></span>
+      <span x-text="Math.round(((step) / questions.length) * 100) + '%'"></span>
+    </div>
+    <div class="h-2 rounded-full bg-gray-100 overflow-hidden">
+      <div class="h-full bg-brand transition-all" :style="`width:${(step / questions.length) * 100}%`"></div>
+    </div>
+  </div>
+
+  <!-- Question wizard: one question at a time -->
+  <div x-show="phase === 'chat'">
+    <template x-for="(q, i) in questions" :key="q.key">
+      <div x-show="i === step" x-transition
+           class="rounded-3xl bg-white card-shadow overflow-hidden border border-gray-100">
+        <!-- En-tête coloré de la question -->
+        <div class="bg-gradient-to-br from-brand to-brand-dark px-6 sm:px-8 pt-7 pb-8 text-white">
+          <div class="flex items-center gap-2 text-brand-light/90 text-xs font-bold title-uppercase tracking-wide">
+            <span class="inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/15" x-text="i + 1"></span>
+            Question <span x-text="i + 1"></span> / <span x-text="questions.length"></span>
+          </div>
+          <h2 class="mt-3 text-2xl sm:text-3xl font-extrabold leading-tight" x-text="q.label"></h2>
+          <p class="text-sm text-brand-light/90 mt-2" x-show="q.help" x-text="q.help"></p>
+        </div>
+
+        <div class="px-6 sm:px-8 py-7">
+          <!-- text / number -->
+          <template x-if="q.type === 'text' || q.type === 'number'">
+            <input :type="q.type === 'number' ? 'number' : 'text'" x-model="answers[q.key]" :placeholder="q.placeholder || ''"
+                   @keydown.enter="next()"
+                   class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand outline-none">
+          </template>
+          <!-- textarea -->
+          <template x-if="q.type === 'textarea'">
+            <textarea x-model="answers[q.key]" :placeholder="q.placeholder || ''" rows="3"
+                      class="w-full rounded-md border border-gray-300 px-3 py-2 focus:border-brand focus:ring-1 focus:ring-brand outline-none"></textarea>
+          </template>
+          <!-- single choice -->
+          <template x-if="q.type === 'single'">
+            <div class="flex flex-wrap gap-2">
+              <template x-for="opt in q.options" :key="opt.value">
+                <button type="button" @click="answers[q.key] = opt.value"
+                        :class="answers[q.key] === opt.value ? 'bg-brand text-white border-brand' : 'bg-white text-gray-700 border-gray-300 hover:border-brand'"
+                        class="rounded-full border px-4 py-2 text-sm" x-text="opt.label"></button>
+              </template>
+            </div>
+          </template>
+          <!-- serie -->
+          <template x-if="q.type === 'serie'">
+            <div class="flex flex-wrap gap-2">
+              <template x-for="s in series" :key="s.code">
+                <button type="button" @click="selectSerie(s.code)"
+                        :class="answers[q.key] === s.code ? 'bg-brand text-white border-brand' : 'bg-white text-gray-700 border-gray-300 hover:border-brand'"
+                        class="rounded-full border px-4 py-2 text-sm">
+                  <span class="font-semibold" x-text="s.code"></span> — <span x-text="s.label"></span>
+                </button>
+              </template>
+            </div>
+          </template>
+          <!-- subjects multi -->
+          <template x-if="q.type === 'subjects_multi'">
+            <div>
+              <p x-show="!answers.bac_serie" class="text-sm text-gray-500">Choisis d'abord ta série.</p>
+              <div class="flex flex-wrap gap-2">
+                <template x-for="subj in subjects" :key="subj.code">
+                  <button type="button" @click="toggleSubject(subj.name)"
+                          :class="(answers[q.key]||[]).includes(subj.name) ? 'bg-brand text-white border-brand' : 'bg-white text-gray-700 border-gray-300 hover:border-brand'"
+                          class="rounded-full border px-3 py-1.5 text-sm" x-text="subj.name"></button>
+                </template>
+              </div>
+            </div>
+          </template>
+          <!-- grades -->
+          <template x-if="q.type === 'grades'">
+            <div class="space-y-2">
+              <p x-show="!subjects.length" class="text-sm text-gray-500">Aucune matière à noter.</p>
+              <template x-for="subj in subjects" :key="subj.code">
+                <div class="flex items-center gap-3">
+                  <label class="flex-1 text-sm" x-text="subj.name"></label>
+                  <input type="number" min="0" max="20" step="0.5" placeholder="/20"
+                         @input="setGrade(subj.name, $event.target.value)"
+                         class="w-24 rounded-md border border-gray-300 px-2 py-1 focus:border-brand focus:ring-1 focus:ring-brand outline-none">
+                </div>
+              </template>
+            </div>
+          </template>
+
+          <!-- Description explicative, en bas de la question -->
+          <div x-show="q.description" x-transition
+               class="mt-6 flex gap-3 rounded-xl bg-brand-light/40 border border-brand-light px-4 py-3">
+            <svg class="w-5 h-5 shrink-0 text-brand mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+            <p class="text-sm text-brand-dark/80 leading-relaxed" x-text="q.description"></p>
+          </div>
+
+          <p class="text-red-600 text-sm mt-3" x-show="error" x-text="error"></p>
+          <div class="mt-8 flex items-center gap-2">
+            <button type="button" @click="prev()" x-show="step > 0"
+                    class="rounded-full border border-gray-300 px-5 py-2.5 text-sm font-bold text-gray-600 hover:border-brand hover:text-brand transition">← Retour</button>
+            <button type="button" @click="next()"
+                    class="ml-auto rounded-full bg-brand px-7 py-2.5 text-sm font-bold text-white hover:bg-brand-dark shadow-lg shadow-brand/20 transition"
+                    x-text="step === questions.length - 1 ? 'Voir le récapitulatif →' : 'Continuer →'"></button>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- Raccourci vers le mode express -->
+    <p class="text-center text-sm text-gray-500 mt-6">
+      Pas le temps ? <a href="{% url 'orientation:express' %}" class="font-bold text-brand hover:underline">Génère ton rapport en décrivant ton profil →</a>
+    </p>
+  </div>
+
+  <!-- Recap -->
+  <div x-show="phase === 'recap'" x-cloak class="space-y-5">
+    <h2 class="text-xl sm:text-2xl font-extrabold text-gray-900">Récapitulatif de ton profil</h2>
+    <dl class="rounded-2xl bg-white card-shadow divide-y divide-gray-100">
+      <template x-for="q in questions" :key="q.key">
+        <div class="flex justify-between gap-4 px-4 py-3 text-sm">
+          <dt class="text-gray-500" x-text="q.label"></dt>
+          <dd class="font-medium text-right" x-text="displayAnswer(q)"></dd>
+        </div>
+      </template>
+    </dl>
+    <div class="rounded-lg bg-brand/5 border border-brand/20 p-4 text-sm text-brand">
+      La génération du rapport consomme <strong>{{ credits_per_report }} crédits</strong>.
+      Solde actuel : <strong>{{ user_credits }}</strong>.
+    </div>
+    <div class="flex gap-2">
+      <button type="button" @click="phase='chat'" class="rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 hover:border-brand">Modifier</button>
+      <button type="button" @click="generate()"
+              class="rounded-md bg-brand px-6 py-3 font-semibold text-white hover:bg-brand-dark">
+        Générer mon rapport d'orientation
+      </button>
+    </div>
+  </div>
+
+  <!-- Generating -->
+  <div x-show="phase === 'generating'" x-cloak class="text-center py-16">
+    <div class="inline-flex items-center gap-3 text-brand">
+      <svg class="w-6 h-6 animate-spin" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.2-8.5" stroke-linecap="round"/></svg>
+      <span class="font-semibold">L'IA réfléchit…</span>
+    </div>
+    <p class="mt-3 text-gray-600" x-text="progress"></p>
+    <p class="mt-1 text-xs text-gray-400">Cela peut prendre une à deux minutes.</p>
+  </div>
+
+  <div x-show="phase === 'failed'" x-cloak class="text-center py-16">
+    <p class="text-red-600 font-semibold" x-text="progress || 'La génération a échoué.'"></p>
+    <button type="button" @click="phase='recap'" class="mt-4 rounded-md bg-brand px-6 py-2 font-semibold text-white">Réessayer</button>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function chatbot() {
+  return {
+    questions: JSON.parse(document.getElementById('questions-data').textContent),
+    series: JSON.parse(document.getElementById('series-data').textContent),
+    answers: JSON.parse(document.getElementById('answers-data').textContent) || {},
+    subjects: [],
+    step: 0,
+    phase: 'chat',
+    error: '',
+    progress: '',
+    csrf: '{{ csrf_token }}',
+    sessionId: {{ session.id }},
+
+    init() {
+      if (this.answers.bac_serie) this.loadSubjects(this.answers.bac_serie);
+    },
+    selectSerie(code) {
+      if (this.answers.bac_serie !== code) {
+        this.answers.favorite_subjects = [];
+        this.answers.grades = {};
+      }
+      this.answers.bac_serie = code;
+      this.loadSubjects(code);
+    },
+    async loadSubjects(code) {
+      try {
+        const r = await fetch(`{% url 'orientation:subjects_for_serie' %}?serie=${encodeURIComponent(code)}`);
+        this.subjects = (await r.json()).subjects || [];
+      } catch (e) { this.subjects = []; }
+    },
+    toggleSubject(name) {
+      const list = this.answers.favorite_subjects || (this.answers.favorite_subjects = []);
+      const i = list.indexOf(name);
+      i === -1 ? list.push(name) : list.splice(i, 1);
+    },
+    setGrade(name, val) {
+      if (!this.answers.grades) this.answers.grades = {};
+      if (val === '' || val === null) { delete this.answers.grades[name]; }
+      else { this.answers.grades[name] = parseFloat(val); }
+    },
+    validate(q) {
+      const v = this.answers[q.key];
+      if (q.required && (v === undefined || v === '' || v === null)) {
+        this.error = 'Cette question est obligatoire.';
+        return false;
+      }
+      this.error = '';
+      return true;
+    },
+    save() {
+      fetch(`/orientation/${this.sessionId}/save/`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': this.csrf},
+        body: JSON.stringify({answers: this.answers})
+      }).catch(() => {});
+    },
+    next() {
+      const q = this.questions[this.step];
+      if (!this.validate(q)) return;
+      this.save();
+      if (this.step === this.questions.length - 1) { this.phase = 'recap'; return; }
+      this.step++;
+    },
+    prev() { this.error = ''; if (this.step > 0) this.step--; },
+    displayAnswer(q) {
+      const v = this.answers[q.key];
+      if (v === undefined || v === '' || v === null) return '—';
+      if (Array.isArray(v)) return v.join(', ') || '—';
+      if (typeof v === 'object') return Object.entries(v).map(([k, n]) => `${k}: ${n}`).join(', ') || '—';
+      if (q.options) { const o = q.options.find(o => o.value === v); return o ? o.label : v; }
+      return v;
+    },
+    async generate() {
+      this.phase = 'generating';
+      this.progress = 'Démarrage…';
+      const r = await fetch(`/orientation/${this.sessionId}/generer/`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': this.csrf},
+        body: JSON.stringify({answers: this.answers})
+      });
+      if (r.status === 402) {
+        const d = await r.json();
+        window.location = d.redirect || '/credits/';
+        return;
+      }
+      this.poll();
+    },
+    poll() {
+      const iv = setInterval(async () => {
+        try {
+          const r = await fetch(`/orientation/${this.sessionId}/status/`);
+          const d = await r.json();
+          this.progress = d.message || this.progress;
+          if (d.status === 'COMPLETED' && d.report_id) {
+            clearInterval(iv);
+            window.location = `/rapport/${d.report_id}/`;
+          } else if (d.status === 'FAILED') {
+            clearInterval(iv);
+            this.phase = 'failed';
+          }
+        } catch (e) {}
+      }, 2500);
+    }
+  }
+}
+</script>
+{% endblock %}

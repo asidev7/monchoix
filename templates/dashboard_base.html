@@ -1,0 +1,153 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}MonChoix{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: {
+      colors: { brand: '#0a3764', 'brand-dark': '#072844', 'brand-light': '#d8e8f9' },
+      fontFamily: { sans: ['Montserrat','ui-sans-serif','system-ui','sans-serif'] },
+    }}}
+  </script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <style>
+    [x-cloak]{display:none!important}
+    body{font-family:'Montserrat',ui-sans-serif,system-ui,sans-serif}
+    .title-uppercase{text-transform:uppercase;letter-spacing:.01em}
+    .card-shadow{box-shadow:0 4px 18px rgba(10,55,100,.10)}
+    .nav-link{display:flex;align-items:center;gap:.75rem;border-radius:.5rem;padding:.625rem .75rem}
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body class="h-full bg-gray-50 text-gray-900" x-data="{ open:false }">
+<div class="flex min-h-screen">
+
+  <!-- SIDEBAR -->
+  <aside :class="open ? 'translate-x-0' : '-translate-x-full'"
+         class="fixed lg:static lg:translate-x-0 z-40 w-64 shrink-0 bg-brand text-white flex flex-col transition-transform min-h-screen">
+    <a href="{% url 'core:landing' %}" class="h-16 flex items-center gap-2 px-6 font-extrabold text-lg title-uppercase border-b border-white/10">
+      <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 3 7l9 5 9-5-9-5Z"/><path d="M3 12l9 5 9-5"/></svg>
+      MonChoix
+    </a>
+    <nav class="flex-1 px-4 py-6 space-y-1 text-sm font-semibold overflow-y-auto">
+      <p class="px-3 text-[11px] uppercase tracking-wider text-brand-light/50 mb-2">Menu</p>
+      <a href="{% url 'core:my_dashboard' %}" class="nav-link text-brand-light/85 hover:bg-white/10">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Tableau de bord
+      </a>
+      <a href="{% url 'orientation:start' %}" class="nav-link text-brand-light/85 hover:bg-white/10">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+        Nouvelle orientation
+      </a>
+      <a href="{% url 'orientation:express' %}" class="nav-link text-brand-light/85 hover:bg-white/10">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8Z"/></svg>
+        Orientation express
+      </a>
+      <a href="{% url 'accounts:my_reports' %}" class="nav-link text-brand-light/85 hover:bg-white/10">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        Mes rapports
+      </a>
+      <a href="{% url 'core:guides' %}" class="nav-link text-brand-light/85 hover:bg-white/10">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z"/></svg>
+        Guides
+      </a>
+      <a href="{% url 'accounts:profile' %}" class="nav-link text-brand-light/85 hover:bg-white/10">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+        Mon profil
+      </a>
+
+      <p class="px-3 text-[11px] uppercase tracking-wider text-brand-light/50 mt-6 mb-2">Crédits</p>
+      <a href="{% url 'credits:my_credits' %}" class="nav-link text-brand-light/85 hover:bg-white/10">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 10h4a2 2 0 0 1 0 4H9"/></svg>
+        Mes crédits
+      </a>
+      <a href="{% url 'credits:packs' %}" class="nav-link text-brand-light/85 hover:bg-white/10">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+        Acheter des crédits
+      </a>
+
+      {% if user.is_staff %}
+      <p class="px-3 text-[11px] uppercase tracking-wider text-brand-light/50 mt-6 mb-2">Administration</p>
+      <a href="{% url 'core:dashboard' %}" class="nav-link text-brand-light/85 hover:bg-white/10">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+        Statistiques
+      </a>
+      <a href="/admin/" class="nav-link text-brand-light/85 hover:bg-white/10">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4Z"/></svg>
+        Administration
+      </a>
+      {% endif %}
+    </nav>
+
+    <!-- Bas de sidebar : retour au site + déconnexion (épinglés) -->
+    <div class="mt-auto border-t border-white/10 p-4 space-y-1 text-sm font-semibold">
+      <a href="{% url 'core:landing' %}" class="nav-link text-brand-light/85 hover:bg-white/10">
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        Retour au site
+      </a>
+      <form method="post" action="{% url 'account_logout' %}">{% csrf_token %}
+        <button class="nav-link w-full text-brand-light/85 hover:bg-white/10">
+          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></svg>
+          Déconnexion
+        </button>
+      </form>
+    </div>
+  </aside>
+  <div x-show="open" x-cloak @click="open=false" class="fixed inset-0 bg-black/30 z-30 lg:hidden"></div>
+
+  <!-- MAIN -->
+  <div class="flex-1 min-w-0 flex flex-col">
+    <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-8 sticky top-0 z-20">
+      <div class="flex items-center gap-3">
+        <button @click="open=!open" class="lg:hidden text-brand"><svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+        <h1 class="font-extrabold text-lg text-gray-900">{% block page_title %}Espace MonChoix{% endblock %}</h1>
+      </div>
+      <div class="flex items-center gap-4">
+        <a href="{% url 'credits:my_credits' %}" class="inline-flex items-center gap-1.5 rounded-full border border-brand bg-white px-3 py-1.5 text-sm font-bold text-brand hover:bg-brand-light">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 10h4a2 2 0 0 1 0 4H9"/></svg>
+          {{ user_credits }} crédits
+        </a>
+        <div class="relative" x-data="{ o:false }" @click.outside="o=false">
+          <button @click="o=!o" class="flex items-center gap-2">
+            {% if user.avatar %}
+              <img src="{{ user.avatar.url }}" class="w-9 h-9 rounded-full object-cover border-2 border-brand-light" alt="">
+            {% else %}
+              <span class="w-9 h-9 rounded-full bg-brand text-white flex items-center justify-center font-extrabold">{{ user.display_name|slice:":1"|upper }}</span>
+            {% endif %}
+            <span class="hidden sm:inline text-sm font-semibold text-gray-700">{{ user.display_name }}</span>
+          </button>
+          <div x-show="o" x-cloak x-transition class="absolute right-0 mt-2 w-52 rounded-xl bg-white card-shadow border border-brand-light py-2 text-sm">
+            <p class="px-4 py-1.5 text-xs text-gray-400 truncate">{{ user.email }}</p>
+            <a href="{% url 'accounts:profile' %}" class="block px-4 py-2 hover:bg-brand-light/50 text-gray-700">Mon profil</a>
+            <a href="{% url 'credits:my_credits' %}" class="block px-4 py-2 hover:bg-brand-light/50 text-gray-700">Mes crédits</a>
+            <form method="post" action="{% url 'account_logout' %}" class="border-t border-gray-100 mt-1 pt-1">{% csrf_token %}
+              <button class="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600">Déconnexion</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    {% if messages %}
+    <div class="px-4 sm:px-8 pt-4 space-y-2">
+      {% for message in messages %}
+      <div class="rounded-md border px-4 py-3 text-sm
+        {% if message.tags == 'error' %}border-red-200 bg-red-50 text-red-700
+        {% elif message.tags == 'success' %}border-green-200 bg-green-50 text-green-700
+        {% else %}border-blue-200 bg-blue-50 text-brand{% endif %}">{{ message }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <main class="flex-1">{% block content %}{% endblock %}</main>
+  </div>
+</div>
+{% block scripts %}{% endblock %}
+</body>
+</html>

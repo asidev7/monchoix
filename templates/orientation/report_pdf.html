@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+  @page { size: A4; margin: 1.6cm; }
+  body { font-family: "Helvetica", Arial, sans-serif; color: #1f2937; font-size: 11px; line-height: 1.5; }
+  h1 { color: #0048AE; font-size: 22px; margin: 0; }
+  h2 { color: #0048AE; font-size: 14px; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; margin-top: 22px; }
+  .muted { color: #6b7280; }
+  .card { border: 1px solid #e5e7eb; border-radius: 6px; padding: 8px 10px; margin-bottom: 6px; }
+  table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+  th, td { border: 1px solid #e5e7eb; padding: 5px 7px; text-align: left; }
+  th { background: #f3f4f6; }
+  .score { font-size: 30px; font-weight: bold; color: #0048AE; }
+  .tag { display: inline-block; border: 1px solid #0048AE33; color: #0048AE; border-radius: 12px; padding: 2px 8px; margin: 2px; }
+</style>
+</head>
+<body>
+  <h1>MonChoix — Rapport d'orientation</h1>
+  <p class="muted">Généré le {{ report.created_at|date:"d/m/Y à H:i" }} — by ASITECH SOLUTION</p>
+
+  <h2>Score du profil</h2>
+  <p class="score">{{ report.profile_score }}/100</p>
+
+  <h2>Top recommandations pour ton profil</h2>
+  {% for f in report.top_filieres %}
+  <div class="card"><strong>{{ forloop.counter }}. {{ f.nom }}</strong>{% if f.adequation %} — {{ f.adequation }}%{% endif %}<br><span class="muted">{{ f.raison }}</span></div>
+  {% endfor %}
+
+  {% if report.top_universities %}
+  <h2>Top universités</h2>
+  <table><tr><th>Université</th><th>Pays</th><th>Filière</th><th>Coût estimé</th></tr>
+  {% for u in report.top_universities %}<tr><td>{{ u.nom }}</td><td>{{ u.pays }}</td><td>{{ u.filiere }}</td><td>{{ u.cout_estime }}</td></tr>{% endfor %}
+  </table>
+  {% endif %}
+
+  {% if report.career_outlooks %}
+  <h2>Débouchés</h2>
+  {% for d in report.career_outlooks %}<div class="card"><strong>{{ d.filiere }}</strong><br><span class="muted">{{ d.metiers|join:", " }}</span></div>{% endfor %}
+  {% endif %}
+
+  {% if report.average_salary %}
+  <h2>Salaire moyen (estimations)</h2>
+  <table><tr><th>Métier</th><th>Zone</th><th>Fourchette</th></tr>
+  {% for s in report.average_salary %}<tr><td>{{ s.metier }}</td><td>{{ s.zone }}</td><td>{{ s.fourchette }}</td></tr>{% endfor %}
+  </table>
+  {% endif %}
+
+  {% if report.skills_to_develop %}
+  <h2>Compétences à développer</h2>
+  <p>{% for sk in report.skills_to_develop %}<span class="tag">{{ sk }}</span>{% endfor %}</p>
+  {% endif %}
+
+  {% if report.personalized_advice %}
+  <h2>Conseils personnalisés</h2>
+  <p>{{ report.personalized_advice|linebreaksbr }}</p>
+  {% endif %}
+
+  {% if report.career_plan %}
+  <h2>Plan de carrière</h2>
+  {% for p in report.career_plan %}<div class="card"><strong>{{ p.etape }}</strong> <span class="muted">— {{ p.duree }}</span><br>{{ p.objectif }}</div>{% endfor %}
+  {% endif %}
+
+  {% if report.sources %}
+  <h2>Sources</h2>
+  <ul>{% for s in report.sources %}<li>{{ s.titre }}{% if s.url %} — {{ s.url }}{% endif %}</li>{% endfor %}</ul>
+  {% endif %}
+</body>
+</html>

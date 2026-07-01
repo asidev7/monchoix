@@ -1,0 +1,160 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MonChoix — Ton orientation guidée par l'IA{% endblock %}</title>
+    <meta name="description" content="MonChoix aide les étudiants et chercheurs d'emploi africains à choisir leur filière grâce à un chatbot IA.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              brand: '#0a3764',
+              'brand-dark': '#072844',
+              'brand-light': '#d8e8f9',
+            },
+            fontFamily: {
+              sans: ['Montserrat', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+            },
+          },
+        },
+      }
+    </script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+      [x-cloak] { display: none !important; }
+      body { font-family: 'Montserrat', ui-sans-serif, system-ui, -apple-system, sans-serif; }
+      .title-uppercase { text-transform: uppercase; letter-spacing: .01em; }
+      .card-shadow { box-shadow: 0 4px 18px rgba(10,55,100,.12); }
+    </style>
+    {% block head %}{% endblock %}
+</head>
+<body class="h-full bg-white text-gray-900 flex flex-col min-h-screen">
+<header class="border-b border-brand-light bg-white/95 backdrop-blur sticky top-0 z-40" x-data="{ open: false }">
+  <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+    <a href="{% url 'core:landing' %}" class="flex items-center gap-2 font-extrabold text-xl text-brand title-uppercase">
+      <svg class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 2 3 7l9 5 9-5-9-5Z"/><path d="M3 12l9 5 9-5"/><path d="M3 17l9 5 9-5" stroke-opacity=".5"/>
+      </svg>
+      MonChoix
+    </a>
+
+    <!-- Desktop nav -->
+    <nav class="hidden md:flex items-center gap-6 text-sm font-bold">
+      <a href="{% url 'core:landing' %}#comment-ca-marche" class="text-gray-600 hover:text-brand">Comment ça marche</a>
+      <a href="{% url 'credits:packs' %}" class="text-gray-600 hover:text-brand">Tarifs</a>
+      {% if user.is_authenticated %}
+        <a href="{% url 'orientation:start' %}" class="text-gray-600 hover:text-brand">Nouvelle session</a>
+        <a href="{% url 'accounts:my_reports' %}" class="text-gray-600 hover:text-brand">Mes rapports</a>
+        <a href="{% url 'credits:my_credits' %}"
+           class="inline-flex items-center gap-1.5 rounded-full border border-brand bg-white px-4 py-1.5 font-bold text-brand hover:bg-brand-light">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 10h4a2 2 0 0 1 0 4H9"/>
+          </svg>
+          {{ user_credits }} crédits
+        </a>
+        <!-- Avatar / user menu -->
+        <div class="relative" x-data="{ o: false }" @click.outside="o = false">
+          <button @click="o = !o" class="flex items-center gap-1">
+            {% if user.avatar %}
+              <img src="{{ user.avatar.url }}" alt="profil" class="w-9 h-9 rounded-full object-cover border-2 border-brand-light">
+            {% else %}
+              <span class="w-9 h-9 rounded-full bg-brand text-white flex items-center justify-center font-extrabold">{{ user.display_name|slice:":1"|upper }}</span>
+            {% endif %}
+            <svg class="w-4 h-4 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+          </button>
+          <div x-show="o" x-cloak x-transition
+               class="absolute right-0 mt-2 w-52 rounded-xl bg-white card-shadow border border-brand-light py-2 text-sm">
+            <p class="px-4 py-1.5 text-xs text-gray-400 truncate">{{ user.email }}</p>
+            {% if user.is_staff %}
+            <a href="{% url 'core:dashboard' %}" class="block px-4 py-2 hover:bg-brand-light/50 font-bold text-brand">Tableau de bord</a>
+            {% endif %}
+            <a href="{% url 'accounts:profile' %}" class="block px-4 py-2 hover:bg-brand-light/50 text-gray-700">Mon profil</a>
+            <a href="{% url 'accounts:my_reports' %}" class="block px-4 py-2 hover:bg-brand-light/50 text-gray-700">Mes rapports</a>
+            <a href="{% url 'credits:my_credits' %}" class="block px-4 py-2 hover:bg-brand-light/50 text-gray-700">Mes crédits</a>
+            <form method="post" action="{% url 'account_logout' %}" class="border-t border-gray-100 mt-1 pt-1">{% csrf_token %}
+              <button class="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600">Déconnexion</button>
+            </form>
+          </div>
+        </div>
+      {% else %}
+        <a href="{% url 'account_login' %}" class="text-gray-600 hover:text-brand">Connexion</a>
+        <a href="{% url 'account_signup' %}" class="rounded-full bg-brand px-5 py-2 font-bold text-white hover:bg-brand-dark">S'inscrire</a>
+      {% endif %}
+    </nav>
+
+    <!-- Mobile: avatar + burger -->
+    <div class="flex items-center gap-3 md:hidden">
+      {% if user.is_authenticated %}
+        {% if user.avatar %}
+          <img src="{{ user.avatar.url }}" alt="profil" class="w-9 h-9 rounded-full object-cover border-2 border-brand-light">
+        {% else %}
+          <span class="w-9 h-9 rounded-full bg-brand text-white flex items-center justify-center font-extrabold">{{ user.display_name|slice:":1"|upper }}</span>
+        {% endif %}
+      {% endif %}
+      <button @click="open = !open" class="text-brand p-1" aria-label="Menu">
+        <svg x-show="!open" class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+        <svg x-show="open" x-cloak class="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile menu panel -->
+  <nav x-show="open" x-cloak x-transition class="md:hidden border-t border-brand-light bg-white px-4 py-4 space-y-1 text-sm font-bold">
+    <a href="{% url 'core:landing' %}#comment-ca-marche" class="block py-2 text-gray-700 hover:text-brand">Comment ça marche</a>
+    <a href="{% url 'credits:packs' %}" class="block py-2 text-gray-700 hover:text-brand">Tarifs</a>
+    {% if user.is_authenticated %}
+      <a href="{% url 'orientation:start' %}" class="block py-2 text-gray-700 hover:text-brand">Nouvelle session</a>
+      <a href="{% url 'accounts:my_reports' %}" class="block py-2 text-gray-700 hover:text-brand">Mes rapports</a>
+      <a href="{% url 'accounts:profile' %}" class="block py-2 text-gray-700 hover:text-brand">Mon profil</a>
+      <a href="{% url 'credits:my_credits' %}" class="block py-2 text-brand">{{ user_credits }} crédits</a>
+      <form method="post" action="{% url 'account_logout' %}" class="pt-2 border-t border-gray-100">{% csrf_token %}
+        <button class="w-full text-left py-2 text-red-600">Déconnexion</button>
+      </form>
+    {% else %}
+      <a href="{% url 'account_login' %}" class="block py-2 text-gray-700 hover:text-brand">Connexion</a>
+      <a href="{% url 'account_signup' %}" class="block mt-2 rounded-full bg-brand px-5 py-2.5 text-center font-bold text-white">S'inscrire</a>
+    {% endif %}
+  </nav>
+</header>
+
+{% if messages %}
+<div class="max-w-6xl mx-auto px-4 w-full mt-4 space-y-2">
+  {% for message in messages %}
+  <div class="rounded-md border px-4 py-3 text-sm
+    {% if message.tags == 'error' %}border-red-200 bg-red-50 text-red-700
+    {% elif message.tags == 'success' %}border-green-200 bg-green-50 text-green-700
+    {% else %}border-blue-200 bg-blue-50 text-brand{% endif %}">
+    {{ message }}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<main class="flex-1 w-full">{% block content %}{% endblock %}</main>
+
+<footer class="bg-brand text-white mt-16">
+  <div class="max-w-6xl mx-auto px-4 py-10">
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4">
+      <a href="{% url 'core:landing' %}" class="flex items-center gap-2 font-extrabold text-lg title-uppercase">
+        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 2 3 7l9 5 9-5-9-5Z"/><path d="M3 12l9 5 9-5"/>
+        </svg>
+        MonChoix
+      </a>
+      <p class="text-sm text-brand-light/90">Ton orientation, éclairée par l'IA.</p>
+    </div>
+    <div class="mt-6 pt-6 border-t border-white/15 text-xs text-brand-light/70 text-center sm:text-left">
+      © {% now "Y" %} MonChoix — by <span class="font-bold text-white">ASITECH SOLUTION</span>
+    </div>
+  </div>
+</footer>
+{% block scripts %}{% endblock %}
+</body>
+</html>

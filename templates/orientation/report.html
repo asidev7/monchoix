@@ -1,0 +1,156 @@
+{% extends "dashboard_base.html" %}
+{% block title %}Ton rapport d'orientation — MonChoix{% endblock %}
+{% block page_title %}Mon rapport d'orientation{% endblock %}
+{% block content %}
+<div class="px-4 sm:px-8 py-8 space-y-12">
+
+  <div class="flex flex-wrap items-start justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-extrabold">Ton rapport d'orientation</h1>
+      <p class="text-gray-500 mt-1">Généré le {{ report.created_at|date:"d/m/Y à H:i" }}</p>
+    </div>
+    <div class="flex gap-2">
+      <a href="{% url 'orientation:report_pdf' report.id %}" class="rounded-md bg-brand px-4 py-2 text-sm font-semibold text-white hover:bg-brand-dark">Télécharger le PDF</a>
+      <a href="{% url 'orientation:start' %}" class="rounded-md border border-gray-300 px-4 py-2 text-sm font-semibold text-gray-700 hover:border-brand">Nouvelle session</a>
+    </div>
+  </div>
+
+  <!-- Score -->
+  <section>
+    <h2 class="text-lg font-bold mb-3">Score du profil</h2>
+    <div class="flex items-center gap-5">
+      <div class="relative w-28 h-28" x-data="{s: {{ report.profile_score }}}">
+        <svg viewBox="0 0 36 36" class="w-28 h-28 -rotate-90">
+          <path d="M18 2a16 16 0 1 1 0 32 16 16 0 0 1 0-32" fill="none" stroke="#e5e7eb" stroke-width="3"/>
+          <path d="M18 2a16 16 0 1 1 0 32 16 16 0 0 1 0-32" fill="none" stroke="#0048AE" stroke-width="3"
+                stroke-linecap="round" :stroke-dasharray="`${s},100`"/>
+        </svg>
+        <div class="absolute inset-0 flex items-center justify-center font-extrabold text-2xl text-brand">{{ report.profile_score }}</div>
+      </div>
+      <p class="text-gray-600 max-w-md text-sm">Ce score reflète la cohérence de ton profil avec les filières recommandées ci-dessous.</p>
+    </div>
+  </section>
+
+  <!-- Top filières -->
+  <section>
+    <h2 class="text-lg font-bold mb-4">Top 10 recommandations pour ton profil</h2>
+    <div class="grid sm:grid-cols-2 gap-4">
+      {% for f in report.top_filieres %}
+      <div class="rounded-lg border border-gray-200 p-4">
+        <div class="flex items-center justify-between">
+          <h3 class="font-semibold">{{ forloop.counter }}. {{ f.nom }}</h3>
+          {% if f.adequation %}<span class="text-sm font-bold text-brand">{{ f.adequation }}%</span>{% endif %}
+        </div>
+        <div class="mt-2 h-1.5 rounded-full bg-gray-100 overflow-hidden"><div class="h-full bg-brand" style="width: {{ f.adequation|default:0 }}%"></div></div>
+        <p class="mt-2 text-sm text-gray-600">{{ f.raison }}</p>
+      </div>
+      {% empty %}<p class="text-gray-500">Aucune recommandation générée.</p>{% endfor %}
+    </div>
+  </section>
+
+  <!-- Universités -->
+  {% if report.top_universities %}
+  <section>
+    <h2 class="text-lg font-bold mb-4">Top universités</h2>
+    <div class="overflow-x-auto rounded-lg border border-gray-200">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 text-left text-gray-500">
+          <tr><th class="px-4 py-2">Université</th><th class="px-4 py-2">Pays</th><th class="px-4 py-2">Filière</th><th class="px-4 py-2">Coût estimé</th><th class="px-4 py-2"></th></tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          {% for u in report.top_universities %}
+          <tr>
+            <td class="px-4 py-2 font-medium">{{ u.nom }}</td>
+            <td class="px-4 py-2">{{ u.pays }}</td>
+            <td class="px-4 py-2">{{ u.filiere }}</td>
+            <td class="px-4 py-2">{{ u.cout_estime }}</td>
+            <td class="px-4 py-2">{% if u.lien %}<a href="{{ u.lien }}" target="_blank" rel="noopener" class="text-brand">Visiter</a>{% endif %}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Débouchés -->
+  {% if report.career_outlooks %}
+  <section>
+    <h2 class="text-lg font-bold mb-4">Débouchés</h2>
+    <div class="space-y-3">
+      {% for d in report.career_outlooks %}
+      <div class="rounded-lg border border-gray-200 p-4">
+        <h3 class="font-semibold">{{ d.filiere }}</h3>
+        <p class="text-sm text-gray-600 mt-1">{{ d.metiers|join:", " }}</p>
+        {% if d.demande_marche %}<p class="text-xs text-gray-500 mt-1">Demande du marché : {{ d.demande_marche }}</p>{% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Salaires -->
+  {% if report.average_salary %}
+  <section>
+    <h2 class="text-lg font-bold mb-4">Salaire moyen (estimations)</h2>
+    <div class="grid sm:grid-cols-2 gap-3">
+      {% for s in report.average_salary %}
+      <div class="rounded-lg border border-gray-200 p-4 flex justify-between items-center">
+        <div><p class="font-medium">{{ s.metier }}</p><p class="text-xs text-gray-500">{{ s.zone }}</p></div>
+        <p class="font-bold text-brand">{{ s.fourchette }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Compétences -->
+  {% if report.skills_to_develop %}
+  <section>
+    <h2 class="text-lg font-bold mb-4">Compétences à développer</h2>
+    <div class="flex flex-wrap gap-2">
+      {% for sk in report.skills_to_develop %}<span class="rounded-full bg-brand/5 text-brand border border-brand/20 px-3 py-1.5 text-sm">{{ sk }}</span>{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <!-- Conseils -->
+  {% if report.personalized_advice %}
+  <section>
+    <h2 class="text-lg font-bold mb-3">Conseils personnalisés</h2>
+    <div class="rounded-lg border border-gray-200 p-5 text-gray-700 whitespace-pre-line">{{ report.personalized_advice }}</div>
+  </section>
+  {% endif %}
+
+  <!-- Plan de carrière -->
+  {% if report.career_plan %}
+  <section>
+    <h2 class="text-lg font-bold mb-4">Plan de carrière</h2>
+    <ol class="relative border-l-2 border-brand/20 ml-2 space-y-6">
+      {% for p in report.career_plan %}
+      <li class="ml-6">
+        <span class="absolute -left-[9px] w-4 h-4 rounded-full bg-brand"></span>
+        <h3 class="font-semibold">{{ p.etape }} <span class="text-xs font-normal text-gray-500">— {{ p.duree }}</span></h3>
+        <p class="text-sm text-gray-600 mt-1">{{ p.objectif }}</p>
+      </li>
+      {% endfor %}
+    </ol>
+  </section>
+  {% endif %}
+
+  <!-- Sources -->
+  {% if report.sources %}
+  <section>
+    <h2 class="text-lg font-bold mb-3">Sources</h2>
+    <ul class="space-y-1 text-sm">
+      {% for s in report.sources %}
+      <li>
+        {% if s.url %}<a href="{{ s.url }}" target="_blank" rel="noopener" class="text-brand hover:underline">{{ s.titre|default:s.url }}</a>
+        {% else %}{{ s.titre }}{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}
